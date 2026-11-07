@@ -9,7 +9,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-test.yml
 
   # Extra job: computes the 7-character commit hash for the tag
-  meta:
+  short-sha: 
     runs-on: ubuntu-latest
     outputs:
       short_sha: ${{ steps.sha.outputs.short_sha }}
@@ -18,11 +18,11 @@ jobs:
         run: echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
   docker-api:
-    needs: [build-test, meta]
+    needs: [build-test, short-sha]
     uses: ./.github/workflows/reusable-docker.yml
     with:
       image_name: ${{ vars.DOCKERHUB_USERNAME }}/notes-api
-      tag: sha-${{ needs.meta.outputs.short_sha }}
+      tag: sha-${{ needs.short-sha.outputs.short_sha }}
       extra_tag: latest
       context: notes-app/backend
     secrets:
@@ -30,11 +30,11 @@ jobs:
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   docker-frontend:
-    needs: [build-test, meta]
+    needs: [build-test, short-sha]
     uses: ./.github/workflows/reusable-docker.yml
     with:
       image_name: ${{ vars.DOCKERHUB_USERNAME }}/notes-frontend
-      tag: sha-${{ needs.meta.outputs.short_sha }}
+      tag: sha-${{ needs.short-sha.outputs.short_sha }}
       extra_tag: latest
       context: notes-app/frontend
     secrets:
