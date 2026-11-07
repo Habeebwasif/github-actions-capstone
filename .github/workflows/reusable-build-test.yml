@@ -1,0 +1,58 @@
+name: Reusable - Build & Test
+
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        description: Node.js version to use
+        type: string
+        default: "20"
+      run_tests:
+        description: Whether to run the test suite
+        type: boolean
+        default: true
+      working_directory: # my package.json is in a subfolder, so we need to set the working directory for the workflow
+        description: Folder containing package.json
+        type: string
+        default: notes-app/backend
+    outputs:
+      test_result:
+        description: "passed or failed"
+        value: ${{ jobs.build-test.outputs.test_result }}
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    outputs:
+      test_result: ${{ steps.result.outputs.test_result }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working_directory }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        id: tests
+        if: ${{ inputs.run_tests }}
+        run: npm test --if-present
+
+      - name: Set test_result output
+        id: result
+        if: ${{ always() }}
+        run: |
+          if [ "${{ steps.tests.outcome }}" = "failure" ]; then
+            echo "test_result=failed" >> "$GITHUB_OUTPUT"
+          else
+            echo "test_result=passed" >> "$GITHUB_OUTPUT"
+          fi
