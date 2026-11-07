@@ -47,6 +47,8 @@ jobs:
           context: ${{ inputs.context }}
           push: true
           tags: |
+           ${{ inputs.image_name }}:${{ inputs.tag }}
+           ${{ inputs.extra_tag != '' && format('{0}:{1}', inputs.image_name, inputs.extra_tag) || '' }}
             ${{ inputs.image_name }}:${{ inputs.tag }}
             ${{ inputs.extra_tag != '' && format('{0}:{1}', inputs.image_name, inputs.extra_tag) || '' }}
 
