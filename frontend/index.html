@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notes</title>
+
+    <style>
+      :root {
+        font-family: Georgia, serif;
+        color: #12202b;
+      }
+
+      body {
+        margin: 0;
+        background: #eef3f7;
+      }
+
+      main {
+        width: min(700px, calc(100% - 32px));
+        margin: 70px auto;
+      }
+
+      h1 {
+        font-size: 48px;
+        text-align: center;
+        margin: 0 0 36px;
+      }
+
+      form {
+        display: flex;
+        gap: 10px;
+      }
+
+      input {
+        flex: 1;
+        min-width: 0;
+        padding: 16px 18px;
+        border: 1px solid #c4d1dc;
+        border-radius: 5px;
+        font: inherit;
+        font-size: 18px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 5px;
+        padding: 0 24px;
+        background: #08799b;
+        color: white;
+        font: inherit;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 30px 0 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border: 1px solid #c4d1dc;
+        border-left: 6px solid #08799b;
+        background: white;
+        font-size: 20px;
+      }
+
+      li span {
+        flex: 1;
+        overflow-wrap: anywhere;
+      }
+
+      .delete {
+        padding: 0 8px;
+        background: transparent;
+        color: #527083;
+        font-size: 28px;
+        font-weight: normal;
+        line-height: 1;
+      }
+
+      #status {
+        min-height: 24px;
+        margin-top: 22px;
+        text-align: center;
+        color: #527083;
+        font-size: 18px;
+      }
+
+      #status.error {
+        color: #9a3030;
+      }
+
+      @media (max-width: 520px) {
+        form {
+          flex-direction: column;
+        }
+
+        form button {
+          min-height: 48px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <h1>Notes</h1>
+
+      <form id="note-form">
+        <input
+          id="note-text"
+          maxlength="280"
+          placeholder="Write a note"
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Add note</button>
+      </form>
+
+      <ul id="notes"></ul>
+
+      <div id="status" role="status" aria-live="polite">
+        Loading...
+      </div>
+    </main>
+
+    <script>
+      const form = document.querySelector("#note-form");
+      const input = document.querySelector("#note-text");
+      const list = document.querySelector("#notes");
+      const status = document.querySelector("#status");
+
+      function setStatus(message, error = false) {
+        status.textContent = message;
+        status.classList.toggle("error", error);
+      }
+
+      async function request(url, options) {
+        const response = await fetch(url, options);
+
+        const data =
+          response.status === 204
+            ? null
+            : await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error || `Request failed (${response.status})`
+          );
+        }
+
+        return data;
+      }
+
+      function render(notes) {
+        list.replaceChildren(
+          ...notes.map((note) => {
+            const item = document.createElement("li");
+
+            const text = document.createElement("span");
+            text.textContent = note.text;
+
+            const remove = document.createElement("button");
+            remove.className = "delete";
+            remove.type = "button";
+            remove.title = "Delete note";
+            remove.setAttribute("aria-label", `Delete ${note.text}`);
+            remove.textContent = "×";
+            remove.addEventListener("click", () => deleteNote(note.id));
+
+            item.append(text, remove);
+            return item;
+          })
+        );
+      }
+
+      async function loadNotes() {
+        try {
+          const notes = await request("/api/notes");
+          render(notes);
+
+          const health = await request("/health");
+
+          if (health.status === "ok" && health.db === "up") {
+            setStatus("API OK, database up");
+          } else {
+            setStatus("API OK");
+          }
+        } catch (error) {
+          setStatus(`API unreachable: ${error.message}`, true);
+        }
+      }
+
+      async function deleteNote(id) {
+        try {
+          await request(`/api/notes/${id}`, {
+            method: "DELETE",
+          });
+
+          await loadNotes();
+        } catch (error) {
+          setStatus(`Could not delete note: ${error.message}`, true);
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const button = form.querySelector("button");
+        button.disabled = true;
+
+        try {
+          await request("/api/notes", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: input.value.trim(),
+            }),
+          });
+
+          input.value = "";
+          await loadNotes();
+        } catch (error) {
+          setStatus(`Could not add note: ${error.message}`, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      loadNotes();
+    </script>
+  </body>
+</html>
+
