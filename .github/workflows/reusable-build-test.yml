@@ -11,7 +11,7 @@ on:
         description: Whether to run the test suite
         type: boolean
         default: true
-      working_directory: # my package.json is in a subfolder, so we need to set the working directory for the workflow
+      working_directory: # my package.json is in a subfolder, so I need to set the working directory to that folder
         description: Folder containing package.json
         type: string
         default: notes-app/backend
@@ -47,6 +47,7 @@ jobs:
         if: ${{ inputs.run_tests }}
         run: npm test --if-present
 
+      # always() so the result is recorded even when the tests fail
       - name: Set test_result output
         id: result
         if: ${{ always() }}
