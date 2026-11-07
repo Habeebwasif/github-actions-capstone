@@ -1,0 +1,66 @@
+name: Scheduled Health Check
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: notes-app
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: notes-app
+
+      # docker-compose.yml expects a .env, which is not in the repo
+      - name: Create .env
+        run: |
+          cat > .env <<'EOF'
+          FRONTEND_PORT=8080
+          DB_HOST=mysql
+          DB_PORT=3306
+          DB_NAME=notesdb
+          DB_USER=notesuser
+          DB_PASSWORD=ci-password
+          MYSQL_ROOT_PASSWORD=ci-root-password
+          EOF
+
+      - name: Pull latest images
+        run: docker compose pull
+
+      # --wait holds until the containers report healthy (MySQL needs more than 5 seconds)
+      - name: Run containers in detached mode
+        run: docker compose up -d --wait
+
+      - name: Wait and curl health endpoint
+        id: check
+        run: |
+          sleep 5
+          response=$(curl -s -w "\n%{http_code}" http://localhost:8080/health || true)
+          echo "$response"
+          code=$(echo "$response" | tail -n1)
+          if [ "$code" = "200" ]; then
+            echo "status=PASSED" >> "$GITHUB_OUTPUT"
+            echo "Health check PASSED"
+          else
+            echo "status=FAILED" >> "$GITHUB_OUTPUT"
+            echo "Health check FAILED"
+            exit 1
+          fi
+
+      - name: Stop and remove containers
+        if: always()
+        run: docker compose down -v
+
+      - name: Health check summary
+        if: always()
+        run: |
+          echo "## Health Check Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image: notes-api:latest, notes-frontend:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: ${{ steps.check.outputs.status || 'FAILED' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Time: $(date)" >> "$GITHUB_STEP_SUMMARY"
