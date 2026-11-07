@@ -13,6 +13,10 @@ on:
       context:
         type: string
         default: "."
+      # Optional second tag, so one build can push both sha-<hash> and latest
+      extra_tag:
+        type: string
+        default: ""
     secrets:
       docker_username:
         required: true
@@ -42,7 +46,9 @@ jobs:
         with:
           context: ${{ inputs.context }}
           push: true
-          tags: ${{ inputs.image_name }}:${{ inputs.tag }}
+          tags: |
+            ${{ inputs.image_name }}:${{ inputs.tag }}
+            ${{ inputs.extra_tag != '' && format('{0}:{1}', inputs.image_name, inputs.extra_tag) || '' }}
 
       - name: Set image_url output
         id: out
