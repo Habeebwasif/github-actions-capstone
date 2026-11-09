@@ -19,6 +19,10 @@ FROM node:20-alpine
 # Set the working directory
 WORKDIR /app
 
+# Remove npm and npx bcoz npm are not carried in the final image, only node is needed to run the backend API
+RUN apk upgrade --no-cache \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+
 # Use production settings
 ENV NODE_ENV=production
 
