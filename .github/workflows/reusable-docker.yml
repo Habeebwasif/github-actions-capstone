@@ -41,14 +41,35 @@ jobs:
           username: ${{ secrets.docker_username }}
           password: ${{ secrets.docker_token }}
 
-      - name: Build and push image
+      # build stage
+      
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ inputs.context }}
+          load: true
+          tags: |
+           ${{ inputs.image_name }}:${{ inputs.tag }}
+           ${{ inputs.extra_tag != '' && format('{0}:{1}', inputs.image_name, inputs.extra_tag) || '' }}
+
+      # trivy scan
+
+      - name: Trivy scan Docker Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ inputs.image_name }}:${{ inputs.tag }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: 'true' # withoutt this any HIGH-severity CVE with no patch would fail my pipeline
+
+      # Only runs if the scan passed
+      - name: Push image
         uses: docker/build-push-action@v7
         with:
           context: ${{ inputs.context }}
           push: true
           tags: |
-           ${{ inputs.image_name }}:${{ inputs.tag }}
-           ${{ inputs.extra_tag != '' && format('{0}:{1}', inputs.image_name, inputs.extra_tag) || '' }}
             ${{ inputs.image_name }}:${{ inputs.tag }}
             ${{ inputs.extra_tag != '' && format('{0}:{1}', inputs.image_name, inputs.extra_tag) || '' }}
 
