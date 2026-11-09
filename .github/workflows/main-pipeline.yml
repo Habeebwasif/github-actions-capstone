@@ -92,7 +92,7 @@ jobs:
           category: trivy-frontend
 
   deploy:
-    needs: [docker-api, docker-frontend]
+    needs: [docker-api, docker-frontend, trivy-scan]
     runs-on: ubuntu-latest
     environment: production
     steps:
