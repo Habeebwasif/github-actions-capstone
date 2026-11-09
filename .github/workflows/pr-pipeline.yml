@@ -11,8 +11,20 @@ jobs:
     with:
       run_tests: true
 
-  pr-comment:
+  Dependency-scan: 
     needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        
+      - name: Check Dependencies for Vulnerabilities
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: critical
+
+  pr-comment:
+    needs: [build-test,Dependency-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Print summary
