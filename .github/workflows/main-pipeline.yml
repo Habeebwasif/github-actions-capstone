@@ -10,7 +10,10 @@ permissions:
 jobs:
   build-test:
     uses: ./.github/workflows/reusable-build-test.yml
-
+    with:
+      run_tests: true
+      node_version: "22"
+      
   # Extra job: computes the 7-character commit hash for the tag
   short-sha: 
     runs-on: ubuntu-latest
