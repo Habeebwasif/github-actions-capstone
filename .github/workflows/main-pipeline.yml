@@ -26,6 +26,9 @@ jobs:
   docker-api:
     needs: [build-test, short-sha]
     uses: ./.github/workflows/reusable-docker.yml
+    permissions:
+      contents: read
+      security-events: write
     with:
       image_name: ${{ vars.DOCKERHUB_USERNAME }}/notes-api
       tag: sha-${{ needs.short-sha.outputs.short_sha }}
@@ -38,6 +41,9 @@ jobs:
   docker-frontend:
     needs: [build-test, short-sha]
     uses: ./.github/workflows/reusable-docker.yml
+    permissions:
+      contents: read
+      security-events: write
     with:
       image_name: ${{ vars.DOCKERHUB_USERNAME }}/notes-frontend
       tag: sha-${{ needs.short-sha.outputs.short_sha }}
