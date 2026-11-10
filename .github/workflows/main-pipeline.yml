@@ -61,7 +61,7 @@ jobs:
 
     steps:
       - name: Scan API image with Trivy
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: habeebwasif/notes-api:sha-${{ needs.short-sha.outputs.short_sha }}
           format: sarif
@@ -71,7 +71,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: habeebwasif/notes-frontend:sha-${{ needs.short-sha.outputs.short_sha }}
           format: sarif
