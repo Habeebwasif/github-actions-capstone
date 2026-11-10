@@ -31,8 +31,8 @@ jobs:
       tag: sha-${{ needs.short-sha.outputs.short_sha }}
       extra_tag: latest
       context: notes-app/backend
+      docker_username: ${{ vars.DOCKERHUB_USERNAME }}
     secrets:
-      docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   docker-frontend:
@@ -43,8 +43,8 @@ jobs:
       tag: sha-${{ needs.short-sha.outputs.short_sha }}
       extra_tag: latest
       context: notes-app/frontend
+      docker_username: ${{ vars.DOCKERHUB_USERNAME }}
     secrets:
-      docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   trivy-scan:
