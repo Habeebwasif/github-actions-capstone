@@ -1,6 +1,9 @@
 # Use Nginx to serve the static frontend.
 FROM nginx:alpine
 
+# this upgrades the Alpine packages to the latest version
+RUN apk upgrade --no-cache
+
 # Copying the reverse-proxy configuration.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
