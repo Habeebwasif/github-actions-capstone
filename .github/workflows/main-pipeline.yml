@@ -3,6 +3,9 @@ name: Main Pipeline
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -67,7 +70,7 @@ jobs:
 
     steps:
       - name: Scan API image with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: habeebwasif/notes-api:sha-${{ needs.short-sha.outputs.short_sha }}
           format: sarif
@@ -77,7 +80,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: habeebwasif/notes-frontend:sha-${{ needs.short-sha.outputs.short_sha }}
           format: sarif
@@ -102,6 +105,7 @@ jobs:
 
   deploy:
     needs: [docker-api, docker-frontend, trivy-scan]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
     steps:

@@ -67,3 +67,20 @@ jobs:
           echo "- Image: notes-api:latest, notes-frontend:latest" >> "$GITHUB_STEP_SUMMARY"
           echo "- Status: ${{ steps.check.outputs.status || 'FAILED' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Time: $(date)" >> "$GITHUB_STEP_SUMMARY"
+
+
+  rescan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [notes-api, notes-frontend]
+    steps:
+      - name: Scan latest ${{ matrix.image }} image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # v0.36.0 # v0.36.0 # v0.36.0 # v0.36.0 # v0.36.0
+        with:
+          image-ref: docker.io/${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: 'true'
