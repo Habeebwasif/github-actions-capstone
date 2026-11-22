@@ -1,5 +1,5 @@
 # Use Nginx to serve the static frontend.
-FROM nginx:alpine
+FROM nginx:alpine-slim
 
 # this upgrades the Alpine packages to the latest version
 RUN apk upgrade --no-cache
